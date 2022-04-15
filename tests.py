@@ -10,6 +10,11 @@ class PartyTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
         app.config['TESTING'] = True
+        app.config['SECRET_KEY'] = 'key'
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess['RSVP'] = False
 
     def test_homepage(self):
         result = self.client.get("/")
@@ -23,13 +28,15 @@ class PartyTests(unittest.TestCase):
        
 
     def test_rsvp(self):
+        
         result = self.client.post("/rsvp",
                                   data={"name": "Jane",
                                         "email": "jane@jane.com"},
                                   follow_redirects=True)
         # FIXME: Once we RSVP, we should see the party details, but
         # not the RSVP form
-        print("FIXME")
+        self.assertIn(b"<h2>Party Details</h2>", result.data)
+        self.assertNotIn(b"<h2>Please RSVP</h2>", result.data)
 
 
 class PartyTestsDatabase(unittest.TestCase):
